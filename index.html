@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+    <meta charset='UTF-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <title>Seoul Bike Demand Assistant</title>
+    <style>
+        body { font-family: system-ui, sans-serif; margin: 2rem; background: #f5f7fa; color: #333; }
+        .card { background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 1.5rem; }
+        h2 { margin-top: 0; color: #2c3e50; }
+        select, button { padding: 0.5rem 1rem; font-size: 1rem; border-radius: 4px; border: 1px solid #ccc; margin-right: 0.5rem; }
+        button { background: #3498db; color: white; cursor: pointer; border: none; }
+        button:hover { background: #2980b9; }
+        #output { background: #eef2f7; padding: 1rem; border-radius: 4px; font-family: monospace; white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <div class='card'>
+        <h2>Seoul Bike Demand Predictor</h2>
+        <p>Select weather conditions to estimate bike rentals dynamically using your lookup table:</p>
+        
+        <label for='season'>Season: </label>
+        <select id='season'>
+            <option value='Winter'>Winter</option>
+            <option value='Spring'>Spring</option>
+            <option value='Summer'>Summer</option>
+            <option value='Autumn'>Autumn</option>
+        </select>
+
+        <label for='temp'>Temperature: </label>
+        <select id='temp'>
+            <option value='-10'>-10°C</option>
+            <option value='0'>0°C</option>
+            <option value='10'>10°C</option>
+            <option value='20'>20°C</option>
+            <option value='30'>30°C</option>
+        </select>
+
+        <button onclick='estimateDemand()'>Predict Demand</button>
+        <h3>Estimated Hourly Demand: <span id='prediction-result'>-</span> bikes</h3>
+    </div>
+
+    <script>
+        let lookupTable = [];
+
+        // Load our exported JSON dataset automatically
+        fetch('demand_lookup.json')
+            .then(response => response.json())
+            .then(data => {
+                lookupTable = data;
+                console.log('Lookup table loaded successfully!');
+            })
+            .catch(err => console.error('Error loading lookup table:', err));
+
+        function estimateDemand() {
+            const selectedSeason = document.getElementById('season').value;
+            const selectedTemp = parseInt(document.getElementById('temp').value);
+
+            // Find matching rows in our precomputed database
+            const matches = lookupTable.filter(row => 
+                row.season === selectedSeason && 
+                row.temp === selectedTemp
+            );
+
+            if (matches.length > 0) {
+                // Calculate average hourly demand for selection
+                const avgDemand = Math.round(matches.reduce((sum, r) => sum + r.demand, 0) / matches.length);
+                document.getElementById('prediction-result').innerText = avgDemand.toLocaleString();
+            } else {
+                document.getElementById('prediction-result').innerText = 'Data N/A';
+            }
+        }
+    </script>
+</body>
+</html>
