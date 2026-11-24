@@ -1,129 +1,1148 @@
 <!DOCTYPE html>
-<html lang='en'>
+<html lang="en">
 <head>
-    <meta charset='UTF-8'>
-    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
-    <title>Seoul Bike Demand Assistant</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seoul Bike Mobility Assistant</title>
+    <!-- Google Fonts: Plus Jakarta Sans & JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        body { font-family: system-ui, sans-serif; margin: 2rem; background: #f5f7fa; color: #333; }
-        .card { background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 1.5rem; max-width: 600px; margin-left: auto; margin-right: auto; }
-        h2 { margin-top: 0; color: #2c3e50; text-align: center; }
-        .form-group { margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; }
-        label { font-weight: bold; width: 40%; }
-        select, input { padding: 0.5rem; font-size: 1rem; border-radius: 4px; border: 1px solid #ccc; width: 55%; box-sizing: border-box; }
-        button { width: 100%; padding: 0.75rem; background: #2ecc71; color: white; border: none; border-radius: 4px; font-size: 1.1rem; cursor: pointer; font-weight: bold; margin-top: 1rem; }
-        button:hover { background: #27ae60; }
-        .result-container { text-align: center; margin-top: 1.5rem; padding: 1rem; background: #e8f8f5; border-radius: 6px; border: 1px solid #a3e4d7; }
-        #prediction-result { font-size: 1.8rem; color: #16a085; font-weight: bold; }
+        :root {
+            /* Light theme palette */
+            --bg-canvas: #f8fafc;
+            --bg-surface: #ffffff;
+            --bg-surface-elevated: #f1f5f9;
+            --bg-subtle: #e2e8f0;
+            --border-card: #e2e8f0;
+            --border-focus: #4f46e5;
+            --text-heading: #0f172a;
+            --text-body: #334155;
+            --text-muted: #64748b;
+            --text-dim: #94a3b8;
+            
+            /* Harmonic accent colors */
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --primary-light: #eef2ff;
+            --emerald: #059669;
+            --emerald-bg: #ecfdf5;
+            --emerald-border: #a7f3d0;
+            --amber: #d97706;
+            --amber-bg: #fffbeb;
+            --amber-border: #fde68a;
+            --rose: #e11d48;
+            --rose-bg: #fff1f2;
+            --rose-border: #fecdd3;
+            --sky: #0284c7;
+            --sky-bg: #f0f9ff;
+            --sky-border: #bae6fd;
+
+            --radius-xl: 20px;
+            --radius-lg: 14px;
+            --radius-md: 10px;
+            --radius-sm: 6px;
+            --shadow-subtle: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+            --shadow-card: 0 10px 25px -5px rgba(15, 23, 42, 0.06), 0 8px 10px -6px rgba(15, 23, 42, 0.04);
+            --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            background-color: var(--bg-canvas);
+            background-image: 
+                radial-gradient(at 10% 10%, rgba(99, 102, 241, 0.05) 0px, transparent 50%),
+                radial-gradient(at 90% 90%, rgba(14, 165, 233, 0.05) 0px, transparent 50%);
+            color: var(--text-body);
+            font-family: var(--font-sans);
+            min-height: 100vh;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+            padding: 36px 20px 60px;
+        }
+
+        .container {
+            max-width: 1160px;
+            margin: 0 auto;
+        }
+
+        /* Top Header */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 32px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .brand-area {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .brand-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, #4f46e5, #6366f1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 18px -4px rgba(79, 70, 229, 0.4);
+            transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .brand-icon:hover {
+            transform: scale(1.08) rotate(-4deg);
+        }
+
+        .brand-icon svg {
+            width: 26px;
+            height: 26px;
+            stroke: #ffffff;
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .brand-text h1 {
+            font-size: 1.45rem;
+            font-weight: 800;
+            color: var(--text-heading);
+            letter-spacing: -0.025em;
+        }
+
+        .brand-text p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        /* Segmented Persona Tabs with animated pill */
+        .tab-switcher {
+            position: relative;
+            display: flex;
+            background: var(--bg-surface-elevated);
+            border: 1px solid var(--border-card);
+            border-radius: var(--radius-lg);
+            padding: 4px;
+            gap: 4px;
+            box-shadow: var(--shadow-subtle);
+        }
+
+        .tab-btn {
+            position: relative;
+            z-index: 1;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            padding: 9px 20px;
+            font-size: 0.88rem;
+            font-weight: 600;
+            font-family: var(--font-sans);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: color 0.2s ease, transform 0.15s ease;
+            user-select: none;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-heading);
+        }
+
+        .tab-btn:active {
+            transform: scale(0.96);
+        }
+
+        .tab-btn.active {
+            background: #ffffff;
+            color: var(--primary);
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+            font-weight: 700;
+        }
+
+        /* Main Workspace Layout */
+        .workspace {
+            display: grid;
+            grid-template-columns: 460px 1fr;
+            gap: 28px;
+            align-items: start;
+        }
+
+        @media (max-width: 980px) {
+            .workspace { grid-template-columns: 1fr; }
+        }
+
+        /* Card Container Styles */
+        .card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-card);
+            border-radius: var(--radius-xl);
+            padding: 28px;
+            box-shadow: var(--shadow-card);
+            transition: box-shadow 0.3s ease;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 22px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid var(--border-card);
+        }
+
+        .card-header h2 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--text-heading);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-reset {
+            background: var(--bg-surface-elevated);
+            border: 1px solid var(--border-card);
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            font-weight: 600;
+            padding: 6px 12px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-reset:hover {
+            background: #ffffff;
+            color: var(--primary);
+            border-color: var(--primary);
+            transform: translateY(-1px);
+        }
+
+        .btn-reset:active {
+            transform: scale(0.95);
+        }
+
+        /* Form Sub-Sections */
+        .form-section {
+            margin-bottom: 22px;
+        }
+
+        .form-section-title {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text-dim);
+            margin-bottom: 12px;
+        }
+
+        /* Time Slider Card */
+        .slider-wrapper {
+            background: var(--bg-surface-elevated);
+            border: 1px solid var(--border-card);
+            border-radius: var(--radius-lg);
+            padding: 16px 18px;
+            transition: border-color 0.2s;
+        }
+
+        .slider-wrapper:focus-within {
+            border-color: var(--primary);
+        }
+
+        .slider-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .slider-title {
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: var(--text-heading);
+        }
+
+        .slider-badge {
+            font-family: var(--font-mono);
+            font-size: 0.92rem;
+            font-weight: 700;
+            color: var(--primary);
+            background: var(--primary-light);
+            padding: 3px 10px;
+            border-radius: 8px;
+            transition: transform 0.15s ease;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 7px;
+            background: var(--bg-subtle);
+            border-radius: 99px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: #ffffff;
+            border: 3.5px solid var(--primary);
+            box-shadow: 0 2px 8px rgba(79, 70, 229, 0.35);
+            cursor: pointer;
+            transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.5);
+        }
+
+        input[type="range"]:active::-webkit-slider-thumb {
+            transform: scale(0.95);
+        }
+
+        .ticks {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: var(--text-dim);
+            margin-top: 6px;
+        }
+
+        /* 2-Column Weather Inputs */
+        .grid-inputs-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .input-tile {
+            background: var(--bg-surface-elevated);
+            border: 1px solid var(--border-card);
+            border-radius: var(--radius-md);
+            padding: 10px 14px;
+            transition: all 0.2s ease;
+        }
+
+        .input-tile:focus-within {
+            border-color: var(--primary);
+            background: #ffffff;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+            transform: translateY(-1px);
+        }
+
+        .input-tile label {
+            display: block;
+            font-size: 0.73rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin-bottom: 4px;
+        }
+
+        .input-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .input-content input {
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--text-heading);
+            font-size: 1.05rem;
+            font-weight: 700;
+            font-family: var(--font-mono);
+            width: 75%;
+        }
+
+        .unit {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--text-dim);
+        }
+
+        /* Interactive Segmented Chips */
+        .chip-segmented {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
+            gap: 6px;
+            background: var(--bg-surface-elevated);
+            border: 1px solid var(--border-card);
+            border-radius: var(--radius-md);
+            padding: 4px;
+            margin-bottom: 12px;
+        }
+
+        .chip-segmented label {
+            cursor: pointer;
+            margin: 0;
+            user-select: none;
+        }
+
+        .chip-segmented input {
+            display: none;
+        }
+
+        .chip-segmented span {
+            display: block;
+            text-align: center;
+            padding: 8px 4px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            border-radius: var(--radius-sm);
+            transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .chip-segmented label:hover span {
+            color: var(--text-heading);
+            background: rgba(255, 255, 255, 0.6);
+        }
+
+        .chip-segmented input:checked + span {
+            background: #ffffff;
+            color: var(--primary);
+            font-weight: 700;
+            box-shadow: 0 2px 6px rgba(15, 23, 42, 0.06);
+            transform: scale(1.02);
+        }
+
+        .chip-segmented label:active span {
+            transform: scale(0.96);
+        }
+
+        /* ---------------- Results Section ---------------- */
+        .results-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* Dynamic Narrative Sentence Card */
+        .narrative-card {
+            background: linear-gradient(135deg, #ffffff, var(--primary-light));
+            border: 1px solid #c7d2fe;
+            border-radius: var(--radius-lg);
+            padding: 16px 20px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            box-shadow: var(--shadow-subtle);
+            animation: fadeIn 0.4s ease;
+        }
+
+        .narrative-icon {
+            font-size: 1.3rem;
+            line-height: 1;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .narrative-text {
+            font-size: 0.92rem;
+            color: var(--text-heading);
+            font-weight: 600;
+            line-height: 1.55;
+        }
+
+        .narrative-sub {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 3px;
+            font-weight: 500;
+        }
+
+        /* Primary Hero Card */
+        .hero-card {
+            background: #ffffff;
+            border: 1px solid var(--border-card);
+            border-radius: var(--radius-xl);
+            padding: 30px;
+            box-shadow: var(--shadow-card);
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.3s ease, border-color 0.3s ease;
+        }
+
+        .hero-card:hover {
+            transform: translateY(-2px);
+            border-color: #cbd5e1;
+        }
+
+        .hero-top-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .hero-title {
+            font-size: 0.82rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text-muted);
+        }
+
+        /* Pill status badges */
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 12px;
+            border-radius: 9999px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            border: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .status-pill.emerald {
+            background: var(--emerald-bg);
+            color: var(--emerald);
+            border-color: var(--emerald-border);
+        }
+
+        .status-pill.amber {
+            background: var(--amber-bg);
+            color: var(--amber);
+            border-color: var(--amber-border);
+        }
+
+        .status-pill.rose {
+            background: var(--rose-bg);
+            color: var(--rose);
+            border-color: var(--rose-border);
+        }
+
+        .hero-number-wrap {
+            display: flex;
+            align-items: baseline;
+            gap: 10px;
+            margin: 8px 0 4px;
+        }
+
+        .hero-number {
+            font-family: var(--font-mono);
+            font-size: 3.2rem;
+            font-weight: 800;
+            letter-spacing: -0.04em;
+            color: var(--text-heading);
+            line-height: 1;
+        }
+
+        .hero-unit {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        .hero-caption {
+            font-size: 0.88rem;
+            color: var(--text-muted);
+            margin-bottom: 22px;
+        }
+
+        /* Live Demand Meter */
+        .meter-container {
+            padding-top: 18px;
+            border-top: 1px solid var(--border-card);
+        }
+
+        .meter-track {
+            height: 9px;
+            background: var(--bg-surface-elevated);
+            border-radius: 99px;
+            position: relative;
+            overflow: visible;
+        }
+
+        .meter-gradient {
+            height: 100%;
+            border-radius: 99px;
+            background: linear-gradient(90deg, #10b981 0%, #f59e0b 50%, #f43f5e 100%);
+            width: 100%;
+        }
+
+        .meter-indicator {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 19px;
+            height: 19px;
+            border-radius: 50%;
+            background: #ffffff;
+            border: 3.5px solid var(--text-heading);
+            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.3);
+            transition: left 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .meter-legend {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.74rem;
+            font-weight: 600;
+            color: var(--text-dim);
+            margin-top: 10px;
+        }
+
+        /* 2-Column Bento Cards */
+        .bento-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        @media (max-width: 640px) {
+            .bento-row { grid-template-columns: 1fr; }
+        }
+
+        .bento-tile {
+            background: #ffffff;
+            border: 1px solid var(--border-card);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            box-shadow: var(--shadow-subtle);
+            transition: transform 0.25s ease, box-shadow 0.25s ease;
+        }
+
+        .bento-tile:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-card);
+        }
+
+        .bento-header {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        .bento-value {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-heading);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+
+        .bento-description {
+            font-size: 0.82rem;
+            color: var(--text-muted);
+        }
+
+        /* Operations Dispatch Box */
+        .logistics-tile {
+            background: var(--sky-bg);
+            border: 1px solid var(--sky-border);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+        }
+
+        .logistics-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 10px;
+            background: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            box-shadow: 0 2px 6px rgba(2, 132, 199, 0.15);
+            flex-shrink: 0;
+        }
+
+        .logistics-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--text-heading);
+            margin-bottom: 4px;
+        }
+
+        .logistics-body {
+            font-size: 0.85rem;
+            color: var(--text-body);
+            line-height: 1.5;
+        }
+
+        .footer-caption {
+            font-size: 0.78rem;
+            color: var(--text-dim);
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
     </style>
 </head>
 <body>
-    <div class='card'>
-        <h2>Seoul Bike Demand Dynamic Predictor</h2>
-        <p style='text-align: center; color: #7f8c8d;'>Powered by an in-browser Random Forest Model (bike_model.js)</p>
+    <div class="container">
+        <!-- Top App Navigation -->
+        <header class="header">
+            <div class="brand-area">
+                <div class="brand-icon">
+                    <svg viewBox="0 0 24 24"><circle cx="5.5" cy="16.5" r="3.5"/><circle cx="18.5" cy="16.5" r="3.5"/><path d="M5.5 16.5 9 8h5l4.5 8.5M9 8 12 16.5h-6.5M13 5h3"/></svg>
+                </div>
+                <div class="brand-text">
+                    <h1>Seoul Bike Mobility Assistant</h1>
+                    <p>Real-time demand intelligence and dynamic pricing engine</p>
+                </div>
+            </div>
 
-        <div class='form-group'>
-            <label for='hour'>Hour (0-23):</label>
-            <input type='number' id='hour' min='0' max='23' value='12'>
-        </div>
+            <!-- Segmented Persona Tabs -->
+            <div class="tab-switcher" role="tablist">
+                <button type="button" class="tab-btn active" id="tab-rider" onclick="switchTab('rider')">
+                    🚲 Commuter View
+                </button>
+                <button type="button" class="tab-btn" id="tab-admin" onclick="switchTab('admin')">
+                    🏢 Fleet Logistics
+                </button>
+            </div>
+        </header>
 
-        <div class='form-group'>
-            <label for='temp'>Temperature (°C):</label>
-            <input type='number' id='temp' step='0.1' value='20.0'>
-        </div>
+        <!-- Main Workspace -->
+        <div class="workspace">
+            <!-- Left Side: Selection Parameters -->
+            <section class="card">
+                <div class="card-header">
+                    <h2>⚙️ Simulation Controls</h2>
+                    <button type="button" class="btn-reset" onclick="resetDefaults()">Reset</button>
+                </div>
 
-        <div class='form-group'>
-            <label for='humidity'>Humidity (%):</label>
-            <input type='number' id='humidity' min='0' max='100' value='50'>
-        </div>
+                <form id="control-form" onsubmit="return false;">
+                    <!-- Time of Day Slider -->
+                    <div class="form-section">
+                        <div class="slider-wrapper">
+                            <div class="slider-header">
+                                <span class="slider-title">Time of Day</span>
+                                <span class="slider-badge" id="hour-badge">18:00 (6 PM)</span>
+                            </div>
+                            <input type="range" id="hour" min="0" max="23" step="1" value="18" oninput="runPrediction()">
+                            <div class="ticks">
+                                <span>12 AM</span>
+                                <span>6 AM</span>
+                                <span>12 PM</span>
+                                <span>6 PM</span>
+                                <span>11 PM</span>
+                            </div>
+                        </div>
+                    </div>
 
-        <div class='form-group'>
-            <label for='wind'>Wind Speed (m/s):</label>
-            <input type='number' id='wind' step='0.1' value='1.5'>
-        </div>
+                    <!-- Weather Conditions -->
+                    <div class="form-section">
+                        <div class="form-section-title">Meteorological Conditions</div>
+                        <div class="grid-inputs-2">
+                            <div class="input-tile">
+                                <label for="temp">Temperature</label>
+                                <div class="input-content">
+                                    <input type="number" id="temp" step="0.1" min="-25" max="45" value="22.0" oninput="runPrediction()">
+                                    <span class="unit">°C</span>
+                                </div>
+                            </div>
+                            <div class="input-tile">
+                                <label for="humidity">Humidity</label>
+                                <div class="input-content">
+                                    <input type="number" id="humidity" min="0" max="100" value="55" oninput="runPrediction()">
+                                    <span class="unit">%</span>
+                                </div>
+                            </div>
+                            <div class="input-tile">
+                                <label for="wind">Wind Speed</label>
+                                <div class="input-content">
+                                    <input type="number" id="wind" step="0.1" min="0" value="1.5" oninput="runPrediction()">
+                                    <span class="unit">m/s</span>
+                                </div>
+                            </div>
+                            <div class="input-tile">
+                                <label for="rain">Rainfall</label>
+                                <div class="input-content">
+                                    <input type="number" id="rain" step="0.1" min="0" value="0.0" oninput="runPrediction()">
+                                    <span class="unit">mm</span>
+                                </div>
+                            </div>
+                            <div class="input-tile" style="grid-column: span 2;">
+                                <label for="snow">Snowfall (Optional)</label>
+                                <div class="input-content">
+                                    <input type="number" id="snow" step="0.1" min="0" value="0.0" oninput="runPrediction()">
+                                    <span class="unit">cm</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-        <div class='form-group'>
-            <label for='rain'>Rainfall (mm):</label>
-            <input type='number' id='rain' step='0.1' value='0.0'>
-        </div>
+                    <!-- Calendar & Season Settings -->
+                    <div class="form-section">
+                        <div class="form-section-title">Calendar & Season</div>
+                        
+                        <!-- Day Type -->
+                        <div class="chip-segmented">
+                            <label><input type="radio" name="weekend" value="0" checked onchange="runPrediction()"><span>Weekday</span></label>
+                            <label><input type="radio" name="weekend" value="1" onchange="runPrediction()"><span>Weekend</span></label>
+                        </div>
 
-        <div class='form-group'>
-            <label for='snow'>Snowfall (cm):</label>
-            <input type='number' id='snow' step='0.1' value='0.0'>
-        </div>
+                        <!-- Holiday -->
+                        <div class="chip-segmented">
+                            <label><input type="radio" name="holiday" value="0" checked onchange="runPrediction()"><span>Normal Day</span></label>
+                            <label><input type="radio" name="holiday" value="1" onchange="runPrediction()"><span>Public Holiday</span></label>
+                        </div>
 
-        <div class='form-group'>
-            <label for='weekend'>Day Type:</label>
-            <select id='weekend'>
-                <option value='0'>Weekday</option>
-                <option value='1'>Weekend</option>
-            </select>
-        </div>
+                        <!-- Season -->
+                        <div class="chip-segmented">
+                            <label><input type="radio" name="season" value="Autumn" checked onchange="runPrediction()"><span>Autumn</span></label>
+                            <label><input type="radio" name="season" value="Spring" onchange="runPrediction()"><span>Spring</span></label>
+                            <label><input type="radio" name="season" value="Summer" onchange="runPrediction()"><span>Summer</span></label>
+                            <label><input type="radio" name="season" value="Winter" onchange="runPrediction()"><span>Winter</span></label>
+                        </div>
+                    </div>
+                </form>
+            </section>
 
-        <div class='form-group'>
-            <label for='holiday'>Holiday:</label>
-            <select id='holiday'>
-                <option value='0'>No Holiday</option>
-                <option value='1'>Holiday</option>
-            </select>
-        </div>
+            <!-- Right Side: Live Results Container -->
+            <section class="results-container">
+                <!-- Dynamic Context Narrative Bar (Updates continuously on any change) -->
+                <div class="narrative-card">
+                    <span class="narrative-icon" id="narrative-icon">📍</span>
+                    <div>
+                        <div class="narrative-text" id="narrative-headline">Analyzing commute conditions...</div>
+                        <div class="narrative-sub" id="narrative-details">Real-time inference running in browser.</div>
+                    </div>
+                </div>
 
-        <div class='form-group'>
-            <label for='season'>Season:</label>
-            <select id='season'>
-                <option value='Summer'>Summer</option>
-                <option value='Spring'>Spring</option>
-                <option value='Autumn'>Autumn</option>
-                <option value='Winter'>Winter</option>
-            </select>
-        </div>
+                <!-- COMMUTER VIEW PANEL -->
+                <div id="panel-rider" style="display: block;">
+                    <!-- Hero Fare Card -->
+                    <div class="hero-card">
+                        <div class="hero-top-row">
+                            <span class="hero-title">Estimated Commute Fare</span>
+                            <span class="status-pill amber" id="rider-status-pill">1.5x Dynamic Surge</span>
+                        </div>
+                        <div class="hero-number-wrap">
+                            <span class="hero-number" id="rider-fare">₹30</span>
+                            <span class="hero-unit">/ ride</span>
+                        </div>
+                        <p class="hero-caption" id="rider-fare-caption">Standard ₹20 fare with 1.5x peak hour demand rate</p>
 
-        <button onclick='calculateLivePrediction()'>Run Model Live</button>
+                        <!-- Surge Meter -->
+                        <div class="meter-container">
+                            <div class="meter-track">
+                                <div class="meter-gradient"></div>
+                                <div class="meter-indicator" id="rider-meter-pin"></div>
+                            </div>
+                            <div class="meter-legend">
+                                <span>Off-Peak Saver</span>
+                                <span>Standard Rate</span>
+                                <span>Peak Demand Surge</span>
+                            </div>
+                        </div>
+                    </div>
 
-        <div class='result-container'>
-            <h3>Estimated Demand: <span id='prediction-result'>-</span> bikes/hour</h3>
+                    <!-- 2-Card Bento Row -->
+                    <div class="bento-row" style="margin-top: 20px;">
+                        <div class="bento-tile">
+                            <div class="bento-header">Dock Availability</div>
+                            <div class="bento-value" id="rider-dock-val">🟡 Moderate</div>
+                            <div class="bento-description" id="rider-dock-desc">3–5 bikes typically at stand</div>
+                        </div>
+                        <div class="bento-tile">
+                            <div class="bento-header">Cycling Safety Index</div>
+                            <div class="bento-value" id="rider-safety-val">🚴 Ideal Weather</div>
+                            <div class="bento-description" id="rider-safety-desc">Dry pavement, calm crosswinds</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FLEET LOGISTICS VIEW PANEL -->
+                <div id="panel-admin" style="display: none;">
+                    <!-- Hero Demand Card -->
+                    <div class="hero-card">
+                        <div class="hero-top-row">
+                            <span class="hero-title">Citywide System Demand</span>
+                            <span class="status-pill rose" id="admin-status-pill">Heavy Load</span>
+                        </div>
+                        <div class="hero-number-wrap">
+                            <span class="hero-number" id="admin-demand">1,107</span>
+                            <span class="hero-unit">rented bikes / hr</span>
+                        </div>
+                        <p class="hero-caption">Predicted active bike flow across all Seoul rental hubs</p>
+
+                        <!-- Load Meter -->
+                        <div class="meter-container">
+                            <div class="meter-track">
+                                <div class="meter-gradient"></div>
+                                <div class="meter-indicator" id="admin-meter-pin"></div>
+                            </div>
+                            <div class="meter-legend">
+                                <span>Off-Peak (&lt;450)</span>
+                                <span>Balanced (450–900)</span>
+                                <span>High Strain (950+)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Logistics Dispatch Box -->
+                    <div class="logistics-tile" style="margin-top: 20px;">
+                        <div class="logistics-icon">🚚</div>
+                        <div>
+                            <div class="logistics-title" id="admin-dispatch-title">Rebalancing Dispatch: 4 Vans Active</div>
+                            <div class="logistics-body" id="admin-dispatch-body">
+                                Elevated demand at central commuter hubs. Deploy vans to transfer return inventory from residential stands to commercial zones.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <p class="footer-caption">
+                    Powered by client-side Scikit-Learn Random Forest transpiled via <code>m2cgen</code> • Zero cloud latency
+                </p>
+            </section>
         </div>
     </div>
 
-    <!-- Load our pre-compiled Javascript ML Model -->
-    <script src='bike_model.js'></script>
+    <!-- Client-side compiled Machine Learning Model -->
+    <script src="bike_model.js"></script>
 
     <script>
-        function calculateLivePrediction() {
-            const hour = parseFloat(document.getElementById('hour').value) || 0;
-            const temp = parseFloat(document.getElementById('temp').value) || 0;
-            const humidity = parseFloat(document.getElementById('humidity').value) || 0;
-            const wind = parseFloat(document.getElementById('wind').value) || 0;
-            const rain = parseFloat(document.getElementById('rain').value) || 0;
-            const snow = parseFloat(document.getElementById('snow').value) || 0;
-            const weekend = parseFloat(document.getElementById('weekend').value);
-            const holiday = parseFloat(document.getElementById('holiday').value);
-            const season = document.getElementById('season').value;
+        let currentTab = 'rider';
+        let currentFareDisplay = 30;
+        let currentDemandDisplay = 1107;
+        let animationFrameId = null;
 
-            // Build seasonal features matching our model feature array order
+        function switchTab(tab) {
+            currentTab = tab;
+            document.getElementById('tab-rider').classList.toggle('active', tab === 'rider');
+            document.getElementById('tab-admin').classList.toggle('active', tab === 'admin');
+            document.getElementById('panel-rider').style.display = tab === 'rider' ? 'block' : 'none';
+            document.getElementById('panel-admin').style.display = tab === 'admin' ? 'block' : 'none';
+        }
+
+        function formatHour(h) {
+            const num = parseInt(h, 10);
+            const period = num >= 12 ? 'PM' : 'AM';
+            const display = num % 12 || 12;
+            return `${num.toString().padStart(2, '0')}:00 (${display} ${period})`;
+        }
+
+        // Smooth number easing animation
+        function animateValue(elementId, startVal, endVal, prefix = '') {
+            const el = document.getElementById(elementId);
+            const startTime = performance.now();
+            const duration = 300; // ms
+
+            function frame(now) {
+                const progress = Math.min((now - startTime) / duration, 1);
+                const easeOut = 1 - Math.pow(1 - progress, 3);
+                const current = Math.round(startVal + (endVal - startVal) * easeOut);
+                el.innerText = prefix + current.toLocaleString();
+                if (progress < 1) {
+                    requestAnimationFrame(frame);
+                }
+            }
+            requestAnimationFrame(frame);
+        }
+
+        function runPrediction() {
+            const hour = parseInt(document.getElementById('hour').value, 10);
+            document.getElementById('hour-badge').innerText = formatHour(hour);
+
+            const temp = parseFloat(document.getElementById('temp').value) || 0;
+            const humidity = Math.min(100, Math.max(0, parseFloat(document.getElementById('humidity').value) || 0));
+            const wind = Math.max(0, parseFloat(document.getElementById('wind').value) || 0);
+            const rain = Math.max(0, parseFloat(document.getElementById('rain').value) || 0);
+            const snow = Math.max(0, parseFloat(document.getElementById('snow').value) || 0);
+
+            const weekend = parseFloat(document.querySelector('input[name="weekend"]:checked').value);
+            const holiday = parseFloat(document.querySelector('input[name="holiday"]:checked').value);
+            const season = document.querySelector('input[name="season"]:checked').value;
+
             const isAutumn = season === 'Autumn' ? 1.0 : 0.0;
             const isSpring = season === 'Spring' ? 1.0 : 0.0;
             const isSummer = season === 'Summer' ? 1.0 : 0.0;
             const isWinter = season === 'Winter' ? 1.0 : 0.0;
 
-            // Must strictly match the WEB_FEATURES array order used during train:
-            // ['hour', 'temperature', 'humidity', 'wind_speed', 'rainfall', 'snowfall', 
-            //  'is_weekend', 'holiday_flag', 'season_Autumn', 'season_Spring', 'season_Summer', 'season_Winter']
+            // Strict 12-feature ordering
             const inputFeatures = [
-                hour, temp, humidity, wind, rain, snow, 
+                hour, temp, humidity, wind, rain, snow,
                 weekend, holiday, isAutumn, isSpring, isSummer, isWinter
             ];
 
             try {
-                // score() is the global function exported inside bike_model.js
-                const prediction = score(inputFeatures);
-                const finalResult = Math.max(0, Math.round(prediction));
-                document.getElementById('prediction-result').innerText = finalResult.toLocaleString();
+                const rawDemand = score(inputFeatures);
+                const demand = Math.max(0, Math.round(rawDemand));
+
+                // 1. Dynamic Context Narrative Update (Words that shift based on selections)
+                const isRushHour = (!weekend && (hour >= 8 && hour <= 9 || hour >= 18 && hour <= 20));
+                const dayLabel = weekend ? 'Weekend' : 'Weekday';
+                const holidayNote = holiday ? ' (Public Holiday)' : '';
+                
+                let narrativeHeadline = '';
+                let narrativeDetails = '';
+                let narrativeIcon = '📍';
+
+                if (rain > 3.0 || snow > 0.5) {
+                    narrativeIcon = '🌧️';
+                    narrativeHeadline = `Precipitation Alert at ${formatHour(hour)} in ${season}`;
+                    narrativeDetails = `${temp.toFixed(1)}°C, ${rain > 0 ? rain + 'mm rain' : snow + 'cm snow'}. Road surfaces may be slippery.`;
+                } else if (isRushHour) {
+                    narrativeIcon = '⚡';
+                    narrativeHeadline = `Peak Commuter Rush (${formatHour(hour)}, ${dayLabel}${holidayNote})`;
+                    narrativeDetails = `High transit traffic across commercial hubs. Fleet turnover is near daily maximum.`;
+                } else if (hour >= 23 || hour <= 5) {
+                    narrativeIcon = '🌙';
+                    narrativeHeadline = `Late Night / Early Morning Flow (${formatHour(hour)})`;
+                    narrativeDetails = `Low demand across the city. Ideal window for maintenance and leisurely night cycling.`;
+                } else {
+                    narrativeIcon = '🌤️';
+                    narrativeHeadline = `Active Mobility Hours (${formatHour(hour)}, ${season})`;
+                    narrativeDetails = `${temp.toFixed(1)}°C with ${humidity}% humidity. Steady commuter and leisure circulation.`;
+                }
+
+                document.getElementById('narrative-icon').innerText = narrativeIcon;
+                document.getElementById('narrative-headline').innerText = narrativeHeadline;
+                document.getElementById('narrative-details').innerText = narrativeDetails;
+
+                // 2. Rider Pricing & Availability Logic
+                const BASE_FARE = 20;
+                let multiplier = 1.0;
+                let pillClass = 'status-pill emerald';
+                let pillText = '1.0x Standard Rate';
+                let dockVal = '🟢 High';
+                let dockDesc = '8+ bikes ready at station';
+
+                if (demand >= 900) {
+                    multiplier = 1.5;
+                    pillClass = 'status-pill rose';
+                    pillText = '1.5x Peak Rush Surge';
+                    dockVal = '🔴 Limited (1–2 bikes)';
+                    dockDesc = 'Stand nearly depleted. Reserve immediately.';
+                } else if (demand >= 450) {
+                    multiplier = 1.2;
+                    pillClass = 'status-pill amber';
+                    pillText = '1.2x Moderate Rate';
+                    dockVal = '🟡 Moderate (3–5 bikes)';
+                    dockDesc = 'Steady dock turnover. Short wait times.';
+                } else {
+                    multiplier = 0.9;
+                    pillClass = 'status-pill emerald';
+                    pillText = '0.9x Off-Peak Saver';
+                    dockVal = '🟢 High (8+ bikes ready)';
+                    dockDesc = 'Abundant bikes. Immediate dock release.';
+                }
+
+                const targetFare = Math.round(BASE_FARE * multiplier);
+                animateValue('rider-fare', currentFareDisplay, targetFare, '₹');
+                currentFareDisplay = targetFare;
+
+                document.getElementById('rider-fare-caption').innerText = 
+                    multiplier === 1.0 
+                        ? `Standard ₹${BASE_FARE} rate with normal availability`
+                        : `Base ₹${BASE_FARE} with a ${multiplier}x dynamic demand rate`;
+
+                const riderPill = document.getElementById('rider-status-pill');
+                riderPill.className = pillClass;
+                riderPill.innerText = pillText;
+
+                document.getElementById('rider-dock-val').innerText = dockVal;
+                document.getElementById('rider-dock-desc').innerText = dockDesc;
+
+                const riderMeterPct = Math.min(100, Math.max(0, (demand / 1250) * 100));
+                document.getElementById('rider-meter-pin').style.left = riderMeterPct + '%';
+
+                // Safety Evaluation
+                const safetyVal = document.getElementById('rider-safety-val');
+                const safetyDesc = document.getElementById('rider-safety-desc');
+
+                if (rain > 3.0 || snow > 0.5) {
+                    safetyVal.innerText = '🌧️ Caution: Wet Roads';
+                    safetyDesc.innerText = 'Reduced tire traction. Cycle cautiously.';
+                } else if (temp > 32) {
+                    safetyVal.innerText = '☀️ Extreme Heat';
+                    safetyDesc.innerText = 'Stay hydrated. Avoid prolonged exertion.';
+                } else if (temp < -2) {
+                    safetyVal.innerText = '❄️ Freezing Temperatures';
+                    safetyDesc.innerText = 'Sub-zero conditions. Check braking grip.';
+                } else if (wind > 5.5) {
+                    safetyVal.innerText = '💨 Gusty Winds';
+                    safetyDesc.innerText = 'Crosswinds along river and bridge trails.';
+                } else {
+                    safetyVal.innerText = '🚴 Pleasant Weather';
+                    safetyDesc.innerText = 'Clear pavement, calm cycling conditions.';
+                }
+
+                // 3. Admin / Fleet Logistics Logic
+                animateValue('admin-demand', currentDemandDisplay, demand);
+                currentDemandDisplay = demand;
+
+                const adminMeterPct = Math.min(100, Math.max(0, (demand / 1400) * 100));
+                document.getElementById('admin-meter-pin').style.left = adminMeterPct + '%';
+
+                const adminPill = document.getElementById('admin-status-pill');
+                const adminTitle = document.getElementById('admin-dispatch-title');
+                const adminBody = document.getElementById('admin-dispatch-body');
+
+                if (demand >= 950) {
+                    adminPill.className = 'status-pill rose';
+                    adminPill.innerText = 'Critical Strain';
+                    adminTitle.innerText = 'Rebalancing Dispatch: 4 Vans Active';
+                    adminBody.innerText = 'Major outflow at commercial interchanges. Rebalance inventory from residential buffer stations now.';
+                } else if (demand >= 450) {
+                    adminPill.className = 'status-pill amber';
+                    adminPill.innerText = 'Balanced Flow';
+                    adminTitle.innerText = 'Rebalancing Dispatch: 1–2 Vans on Standby';
+                    adminBody.innerText = 'Normal operational equilibrium. Standard dock replenishment intervals active.';
+                } else {
+                    adminPill.className = 'status-pill emerald';
+                    adminPill.innerText = 'Off-Peak Flow';
+                    adminTitle.innerText = 'Fleet Idle / Maintenance Window';
+                    adminBody.innerText = 'Low system utilization. Ideal time for dock diagnostics, tire checks, and maintenance.';
+                }
+
             } catch (err) {
                 console.error(err);
-                alert('Make sure bike_model.js is loaded successfully!');
             }
         }
+
+        function resetDefaults() {
+            document.getElementById('hour').value = 18;
+            document.getElementById('temp').value = 22.0;
+            document.getElementById('humidity').value = 55;
+            document.getElementById('wind').value = 1.5;
+            document.getElementById('rain').value = 0.0;
+            document.getElementById('snow').value = 0.0;
+            document.querySelector('input[name="weekend"][value="0"]').checked = true;
+            document.querySelector('input[name="holiday"][value="0"]').checked = true;
+            document.querySelector('input[name="season"][value="Autumn"]').checked = true;
+            runPrediction();
+        }
+
+        // Initialize immediately
+        window.onload = runPrediction;
     </script>
 </body>
 </html>
