@@ -1061,40 +1061,37 @@
                 document.getElementById('narrative-headline').innerText = narrativeHeadline;
                 document.getElementById('narrative-details').innerText = narrativeDetails;
 
-                // 2. Dynamic Price Per Km based on Bike Availability
+                // 2. Continuous Dynamic Pricing based on Predicted Demand
                 const BASE_UNLOCK_FEE = 10; // Fixed base unlock in ₹
-                let ratePerKm = 8.0;        // Dynamic rate in ₹/km
-                let surgeMultText = '1.0x Regular Rate';
+                const BASE_KM_RATE = 6.0;   // Base rate in ₹/km
+
+                // Continuous Surge Multiplier scales smoothly with demand (baseline demand ~700)
+                // Clamped between 0.80x (quiet off-peak) and 2.20x (extreme peak)
+                let surgeMultiplier = 0.85 + (demand / 700) * 0.45;
+                surgeMultiplier = Math.min(2.20, Math.max(0.80, surgeMultiplier));
+
+                // Dynamic Rate per km updates smoothly with every change in demand
+                const ratePerKm = parseFloat((BASE_KM_RATE * surgeMultiplier).toFixed(2));
+
                 let pillClass = 'status-pill emerald';
-                let ratePillClass = 'status-pill emerald';
                 let dockVal = '🟢 High';
                 let dockDesc = '8+ bikes ready at station';
 
-                if (demand >= 900) {
-                    // Low Bike Availability -> Scarcity Surge
-                    ratePerKm = 12.0;
+                if (surgeMultiplier >= 1.40) {
                     pillClass = 'status-pill rose';
-                    ratePillClass = 'status-pill rose';
-                    surgeMultText = '1.5x Peak Rush Surge';
                     dockVal = '🔴 Limited (1–2 bikes)';
-                    dockDesc = 'Stand nearly depleted. Scarcity pricing active.';
-                } else if (demand >= 450) {
-                    // Moderate Bike Availability -> Standard Rate
-                    ratePerKm = 8.0;
+                    dockDesc = 'Stand nearly depleted. Scarcity surge active.';
+                } else if (surgeMultiplier >= 1.05) {
                     pillClass = 'status-pill amber';
-                    ratePillClass = 'status-pill amber';
-                    surgeMultText = '1.2x Moderate Rate';
                     dockVal = '🟡 Moderate (3–5 bikes)';
                     dockDesc = 'Steady dock turnover. Balanced fleet.';
                 } else {
-                    // High Bike Availability -> Off-Peak Discount
-                    ratePerKm = 5.5;
                     pillClass = 'status-pill emerald';
-                    ratePillClass = 'status-pill emerald';
-                    surgeMultText = '0.9x Off-Peak Saver';
                     dockVal = '🟢 High (8+ bikes ready)';
-                    dockDesc = 'Abundant bikes. Saver discount applied.';
+                    dockDesc = 'Abundant bikes. Off-peak discount applied.';
                 }
+
+                const surgeMultText = `${surgeMultiplier.toFixed(2)}x Dynamic Surge`;
 
                 // Two-part tariff: Total = Base Unlock + (Distance * RatePerKm)
                 const targetFare = Math.round(BASE_UNLOCK_FEE + (distance * ratePerKm));
@@ -1103,11 +1100,11 @@
 
                 document.getElementById('rider-fare-unit').innerText = `for ${distance.toFixed(1)} km trip`;
                 document.getElementById('rider-fare-caption').innerText = 
-                    `Base unlock ₹${BASE_UNLOCK_FEE} + ₹${ratePerKm.toFixed(2)}/km based on ${dockVal.toLowerCase()} dock availability`;
+                    `Base unlock ₹${BASE_UNLOCK_FEE} + ₹${ratePerKm.toFixed(2)}/km (Demand: ${demand.toLocaleString()} bikes/hr • ${surgeMultiplier.toFixed(2)}x surge)`;
 
                 const riderRatePill = document.getElementById('rider-rate-pill');
                 if (riderRatePill) {
-                    riderRatePill.className = ratePillClass;
+                    riderRatePill.className = pillClass;
                     riderRatePill.innerText = `₹${ratePerKm.toFixed(2)} / km`;
                 }
 
