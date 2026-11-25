@@ -490,6 +490,8 @@
             align-items: center;
             justify-content: space-between;
             margin-bottom: 8px;
+            flex-wrap: wrap;
+            gap: 8px;
         }
 
         .hero-title {
@@ -498,6 +500,12 @@
             text-transform: uppercase;
             letter-spacing: 0.06em;
             color: var(--text-muted);
+        }
+
+        .hero-badges-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         /* Pill status badges */
@@ -841,13 +849,16 @@
                     <div class="hero-card">
                         <div class="hero-top-row">
                             <span class="hero-title">Estimated Commute Fare</span>
-                            <span class="status-pill amber" id="rider-status-pill">1.5x Dynamic Surge</span>
+                            <div class="hero-badges-wrap">
+                                <span class="status-pill emerald" id="rider-rate-pill">₹8.00 / km</span>
+                                <span class="status-pill amber" id="rider-status-pill">1.5x Dynamic Surge</span>
+                            </div>
                         </div>
                         <div class="hero-number-wrap">
-                            <span class="hero-number" id="rider-fare">₹30</span>
-                            <span class="hero-unit">/ ride</span>
+                            <span class="hero-number" id="rider-fare">₹38</span>
+                            <span class="hero-unit" id="rider-fare-unit">for 3.5 km trip</span>
                         </div>
-                        <p class="hero-caption" id="rider-fare-caption">Standard ₹20 fare with 1.5x peak hour demand rate</p>
+                        <p class="hero-caption" id="rider-fare-caption">Base unlock ₹10 + ₹8.00/km based on dock availability</p>
 
                         <!-- Surge Meter -->
                         <div class="meter-container">
@@ -856,18 +867,33 @@
                                 <div class="meter-indicator" id="rider-meter-pin"></div>
                             </div>
                             <div class="meter-legend">
-                                <span>Off-Peak Saver</span>
-                                <span>Standard Rate</span>
-                                <span>Peak Demand Surge</span>
+                                <span>Off-Peak Saver (₹5.50/km)</span>
+                                <span>Standard Rate (₹8.00/km)</span>
+                                <span>Peak Surge (₹12.00/km)</span>
                             </div>
                         </div>
                     </div>
 
+                    <!-- Trip Distance Slider (Commuter Only) -->
+                    <div class="slider-wrapper" style="margin-top: 16px;">
+                        <div class="slider-header">
+                            <span class="slider-title">Estimated Trip Distance</span>
+                            <span class="slider-badge" id="distance-badge">3.5 km</span>
+                        </div>
+                        <input type="range" id="distance" min="1.0" max="15.0" step="0.5" value="3.5" oninput="runPrediction()">
+                        <div class="ticks">
+                            <span>1 km (Quick Hop)</span>
+                            <span>5 km (Standard Commute)</span>
+                            <span>10 km (Cross-District)</span>
+                            <span>15 km</span>
+                        </div>
+                    </div>
+
                     <!-- 2-Card Bento Row -->
-                    <div class="bento-row" style="margin-top: 20px;">
+                    <div class="bento-row" style="margin-top: 16px;">
                         <div class="bento-tile">
-                            <div class="bento-header">Dock Availability</div>
-                            <div class="bento-value" id="rider-dock-val">🟡 Moderate</div>
+                            <div class="bento-header">Dock Availability & Rate</div>
+                            <div class="bento-value" id="rider-dock-val">🟡 Moderate (₹8.00/km)</div>
                             <div class="bento-description" id="rider-dock-desc">3–5 bikes typically at stand</div>
                         </div>
                         <div class="bento-tile">
@@ -919,7 +945,7 @@
                 </div>
 
                 <p class="footer-caption">
-                    Powered by client-side Scikit-Learn Random Forest transpiled via <code>m2cgen</code> • Zero cloud latency
+                        please note: this is a simulated model for demonstration purposes only. Actual fares, demand, and availability may vary in real-world conditions.
                 </p>
             </section>
         </div>
@@ -930,7 +956,7 @@
 
     <script>
         let currentTab = 'rider';
-        let currentFareDisplay = 30;
+        let currentFareDisplay = 38;
         let currentDemandDisplay = 1107;
         let animationFrameId = null;
 
@@ -953,7 +979,7 @@
         function animateValue(elementId, startVal, endVal, prefix = '') {
             const el = document.getElementById(elementId);
             const startTime = performance.now();
-            const duration = 300; // ms
+            const duration = 250; // ms
 
             function frame(now) {
                 const progress = Math.min((now - startTime) / duration, 1);
@@ -970,6 +996,14 @@
         function runPrediction() {
             const hour = parseInt(document.getElementById('hour').value, 10);
             document.getElementById('hour-badge').innerText = formatHour(hour);
+
+            // Read Trip Distance (for dynamic per-km pricing)
+            const distanceInput = document.getElementById('distance');
+            const distance = distanceInput ? (parseFloat(distanceInput.value) || 3.5) : 3.5;
+            const distanceBadge = document.getElementById('distance-badge');
+            if (distanceBadge) {
+                distanceBadge.innerText = distance.toFixed(1) + ' km';
+            }
 
             const temp = parseFloat(document.getElementById('temp').value) || 0;
             const humidity = Math.min(100, Math.max(0, parseFloat(document.getElementById('humidity').value) || 0));
@@ -1027,48 +1061,61 @@
                 document.getElementById('narrative-headline').innerText = narrativeHeadline;
                 document.getElementById('narrative-details').innerText = narrativeDetails;
 
-                // 2. Rider Pricing & Availability Logic
-                const BASE_FARE = 20;
-                let multiplier = 1.0;
+                // 2. Dynamic Price Per Km based on Bike Availability
+                const BASE_UNLOCK_FEE = 10; // Fixed base unlock in ₹
+                let ratePerKm = 8.0;        // Dynamic rate in ₹/km
+                let surgeMultText = '1.0x Regular Rate';
                 let pillClass = 'status-pill emerald';
-                let pillText = '1.0x Standard Rate';
+                let ratePillClass = 'status-pill emerald';
                 let dockVal = '🟢 High';
                 let dockDesc = '8+ bikes ready at station';
 
                 if (demand >= 900) {
-                    multiplier = 1.5;
+                    // Low Bike Availability -> Scarcity Surge
+                    ratePerKm = 12.0;
                     pillClass = 'status-pill rose';
-                    pillText = '1.5x Peak Rush Surge';
+                    ratePillClass = 'status-pill rose';
+                    surgeMultText = '1.5x Peak Rush Surge';
                     dockVal = '🔴 Limited (1–2 bikes)';
-                    dockDesc = 'Stand nearly depleted. Reserve immediately.';
+                    dockDesc = 'Stand nearly depleted. Scarcity pricing active.';
                 } else if (demand >= 450) {
-                    multiplier = 1.2;
+                    // Moderate Bike Availability -> Standard Rate
+                    ratePerKm = 8.0;
                     pillClass = 'status-pill amber';
-                    pillText = '1.2x Moderate Rate';
+                    ratePillClass = 'status-pill amber';
+                    surgeMultText = '1.2x Moderate Rate';
                     dockVal = '🟡 Moderate (3–5 bikes)';
-                    dockDesc = 'Steady dock turnover. Short wait times.';
+                    dockDesc = 'Steady dock turnover. Balanced fleet.';
                 } else {
-                    multiplier = 0.9;
+                    // High Bike Availability -> Off-Peak Discount
+                    ratePerKm = 5.5;
                     pillClass = 'status-pill emerald';
-                    pillText = '0.9x Off-Peak Saver';
+                    ratePillClass = 'status-pill emerald';
+                    surgeMultText = '0.9x Off-Peak Saver';
                     dockVal = '🟢 High (8+ bikes ready)';
-                    dockDesc = 'Abundant bikes. Immediate dock release.';
+                    dockDesc = 'Abundant bikes. Saver discount applied.';
                 }
 
-                const targetFare = Math.round(BASE_FARE * multiplier);
+                // Two-part tariff: Total = Base Unlock + (Distance * RatePerKm)
+                const targetFare = Math.round(BASE_UNLOCK_FEE + (distance * ratePerKm));
                 animateValue('rider-fare', currentFareDisplay, targetFare, '₹');
                 currentFareDisplay = targetFare;
 
+                document.getElementById('rider-fare-unit').innerText = `for ${distance.toFixed(1)} km trip`;
                 document.getElementById('rider-fare-caption').innerText = 
-                    multiplier === 1.0 
-                        ? `Standard ₹${BASE_FARE} rate with normal availability`
-                        : `Base ₹${BASE_FARE} with a ${multiplier}x dynamic demand rate`;
+                    `Base unlock ₹${BASE_UNLOCK_FEE} + ₹${ratePerKm.toFixed(2)}/km based on ${dockVal.toLowerCase()} dock availability`;
+
+                const riderRatePill = document.getElementById('rider-rate-pill');
+                if (riderRatePill) {
+                    riderRatePill.className = ratePillClass;
+                    riderRatePill.innerText = `₹${ratePerKm.toFixed(2)} / km`;
+                }
 
                 const riderPill = document.getElementById('rider-status-pill');
                 riderPill.className = pillClass;
-                riderPill.innerText = pillText;
+                riderPill.innerText = surgeMultText;
 
-                document.getElementById('rider-dock-val').innerText = dockVal;
+                document.getElementById('rider-dock-val').innerText = `${dockVal} (₹${ratePerKm.toFixed(2)}/km)`;
                 document.getElementById('rider-dock-desc').innerText = dockDesc;
 
                 const riderMeterPct = Math.min(100, Math.max(0, (demand / 1250) * 100));
@@ -1130,6 +1177,9 @@
 
         function resetDefaults() {
             document.getElementById('hour').value = 18;
+            if (document.getElementById('distance')) {
+                document.getElementById('distance').value = 3.5;
+            }
             document.getElementById('temp').value = 22.0;
             document.getElementById('humidity').value = 55;
             document.getElementById('wind').value = 1.5;
